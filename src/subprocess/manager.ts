@@ -149,6 +149,7 @@ export class ClaudeSubprocess extends EventEmitter {
 
         if (process.env.DEBUG_SUBPROCESS) {
           console.error(`[Subprocess] Process spawned with PID: ${this.process.pid}`);
+          console.error(`[Subprocess] Prompt (first 800 chars):\n${prompt.slice(0, 800)}`);
         }
 
         // Parse JSON stream from stdout

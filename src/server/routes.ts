@@ -30,6 +30,16 @@ export async function handleChatCompletions(
   const stream = body.stream === true;
 
   try {
+    if (process.env.DEBUG_SUBPROCESS) {
+      const summary = body.messages?.map((m) => {
+        const content = Array.isArray(m.content)
+          ? m.content.map((b: { type: string }) => b.type).join("+")
+          : `text(${String(m.content).slice(0, 80)})`;
+        return `${m.role}:[${content}]`;
+      }).join(", ");
+      console.error(`[Request] model=${body.model} stream=${body.stream} messages=${summary}`);
+    }
+
     // Validate request
     if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
       res.status(400).json({
@@ -335,6 +345,9 @@ async function handleNonStreamingResponse(
 
     subprocess.on("result", (result: ClaudeCliResult) => {
       finalResult = result;
+      if (process.env.DEBUG_SUBPROCESS) {
+        console.error(`[NonStreaming] Claude response (first 500 chars): ${(result.result || "").slice(0, 500)}`);
+      }
     });
 
     subprocess.on("error", (error: Error) => {
