@@ -86,6 +86,14 @@ const OPENCLAW_TOOL_MAPPING_PROMPT = [
   "Skills are located in the `skills/` directory relative to your working directory.",
   "To use a skill: `Read` its SKILL.md file first, then follow the instructions using `Bash`.",
   "Run `openclaw skills list --eligible --json` to see all available skills.",
+  "",
+  "### Output Format Discipline",
+  "When a system or user instruction asks for ONLY JSON output (e.g. 'respond with only JSON', 'return a JSON object', 'output must be valid JSON', 'respond in JSON format'), you MUST:",
+  "- Output ONLY the raw JSON, with `{` or `[` as the very first character of your response",
+  "- No preamble: do not write 'Here is the JSON:', 'I want to', 'Sure!', 'Based on my analysis...', or any other text before the JSON",
+  "- No postscript or explanation after the closing `}` or `]`",
+  "- No markdown code fences — do not wrap the JSON in ```json blocks",
+  "If you need to read files or use tools first, do so silently, then output only the final JSON.",
 ].join("\n");
 
 export class ClaudeSubprocess extends EventEmitter {
