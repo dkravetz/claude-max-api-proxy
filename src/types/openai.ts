@@ -3,10 +3,20 @@
  * Used for Clawdbot integration
  */
 
-export interface OpenAIContentBlock {
+export interface OpenAITextBlock {
   type: "text" | "input_text";
   text: string;
 }
+
+export interface OpenAIImageBlock {
+  type: "image_url";
+  image_url: {
+    url: string; // "data:<mime>;base64,<data>" or an https URL
+    detail?: "low" | "high" | "auto";
+  };
+}
+
+export type OpenAIContentBlock = OpenAITextBlock | OpenAIImageBlock;
 
 export interface OpenAIChatMessage {
   role: "system" | "user" | "assistant";

@@ -5,6 +5,7 @@
  */
 
 import type { Request, Response } from "express";
+import { unlink } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 import { ClaudeSubprocess } from "../subprocess/manager.js";
 import { openaiToCli } from "../adapter/openai-to-cli.js";
@@ -274,6 +275,10 @@ async function handleStreamingResponse(
     });
 
     subprocess.on("close", (code: number | null) => {
+      // Clean up any temp image files written for this request
+      for (const f of cliInput.tempFiles) {
+        unlink(f).catch(() => {});
+      }
       // Subprocess exited - ensure response is closed
       if (!res.writableEnded) {
         if (code !== 0 && !isComplete) {
@@ -345,6 +350,10 @@ async function handleNonStreamingResponse(
     });
 
     subprocess.on("close", (code: number | null) => {
+      // Clean up any temp image files written for this request
+      for (const f of cliInput.tempFiles) {
+        unlink(f).catch(() => {});
+      }
       if (finalResult) {
         res.json(cliResultToOpenai(finalResult, requestId));
       } else if (!res.headersSent) {
