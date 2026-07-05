@@ -31,6 +31,7 @@ export interface SubprocessOptions {
   sessionId?: string;
   cwd?: string;
   timeout?: number;
+  systemPrompt?: string;
 }
 
 export interface SubprocessEvents {
@@ -149,6 +150,7 @@ export class ClaudeSubprocess extends EventEmitter {
 
         if (process.env.DEBUG_SUBPROCESS) {
           console.error(`[Subprocess] Process spawned with PID: ${this.process.pid}`);
+          console.error(`[Subprocess] System prompt (first 400 chars):\n${(options.systemPrompt || "").slice(0, 400)}`);
           console.error(`[Subprocess] Prompt (first 800 chars):\n${prompt.slice(0, 800)}`);
         }
 
@@ -200,19 +202,26 @@ export class ClaudeSubprocess extends EventEmitter {
    * Build CLI arguments array
    */
   private buildArgs(options: SubprocessOptions): string[] {
+    // Build the combined system prompt: request's system prompt + tool mapping
+    const systemParts: string[] = [];
+    if (options.systemPrompt) {
+      systemParts.push(options.systemPrompt);
+    }
+    systemParts.push(OPENCLAW_TOOL_MAPPING_PROMPT);
+    const combinedSystemPrompt = systemParts.join("\n\n");
+
     const args = [
-      "--print", // Non-interactive mode
-      "--dangerously-skip-permissions", // Skip permission prompts
+      "--print",
+      "--dangerously-skip-permissions",
       "--output-format",
-      "stream-json", // JSON streaming output
-      "--verbose", // Required for stream-json
-      "--include-partial-messages", // Enable streaming chunks
+      "stream-json",
+      "--verbose",
+      "--include-partial-messages",
       "--model",
-      options.model, // Model alias (opus/sonnet/haiku)
-      "--no-session-persistence", // Don't save sessions
+      options.model,
+      "--no-session-persistence",
       "--append-system-prompt",
-      OPENCLAW_TOOL_MAPPING_PROMPT,
-      // Prompt is passed via stdin (avoids E2BIG on large inputs)
+      combinedSystemPrompt,
     ];
 
     if (options.sessionId) {

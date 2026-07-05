@@ -15,6 +15,7 @@ export interface CliInput {
   model: ClaudeModel;
   sessionId?: string;
   tempFiles: string[];
+  systemPrompt: string;
 }
 
 const MODEL_MAP: Record<string, ClaudeModel> = {
@@ -135,8 +136,9 @@ function stripOpenClawTooling(text: string): string {
  */
 export function messagesToPrompt(
   messages: OpenAIChatRequest["messages"]
-): { prompt: string; tempFiles: string[] } {
+): { prompt: string; tempFiles: string[]; systemPrompt: string } {
   const parts: string[] = [];
+  const systemParts: string[] = [];
   const tempFiles: string[] = [];
 
   for (const msg of messages) {
@@ -145,7 +147,9 @@ export function messagesToPrompt(
 
     switch (msg.role) {
       case "system":
-        parts.push(`<system>\n${stripOpenClawTooling(text)}\n</system>\n`);
+        // Collect system messages to pass via --append-system-prompt, not stdin.
+        // Claude CLI treats all stdin as the user turn; <system> tags are not parsed.
+        systemParts.push(stripOpenClawTooling(text));
         break;
 
       case "user": {
@@ -166,18 +170,23 @@ export function messagesToPrompt(
     }
   }
 
-  return { prompt: parts.join("\n").trim(), tempFiles };
+  return {
+    prompt: parts.join("\n").trim(),
+    tempFiles,
+    systemPrompt: systemParts.join("\n\n"),
+  };
 }
 
 /**
  * Convert OpenAI chat request to CLI input format
  */
 export function openaiToCli(request: OpenAIChatRequest): CliInput {
-  const { prompt, tempFiles } = messagesToPrompt(request.messages);
+  const { prompt, tempFiles, systemPrompt } = messagesToPrompt(request.messages);
   return {
     prompt,
     model: extractModel(request.model),
-    sessionId: request.user, // Use OpenAI's user field for session mapping
+    sessionId: request.user,
     tempFiles,
+    systemPrompt,
   };
 }
